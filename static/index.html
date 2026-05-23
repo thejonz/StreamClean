@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0c1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="StreamClean">
+  <meta name="description" content="Browse VidAngel-ready movies sorted by Rotten Tomatoes score. Watch trailers, then stream with filters.">
+  <title>StreamClean — Clean streaming, sorted by critics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-icon" aria-hidden="true">▶</span>
+          <div>
+            <h1 class="brand-name">StreamClean</h1>
+            <p class="brand-tag">VidAngel-ready · Rotten Tomatoes sorted</p>
+          </div>
+        </div>
+        <div class="controls">
+          <div id="auth-bar" class="auth-bar"></div>
+          <label class="select-wrap">
+            <span class="sr-only">Sort by</span>
+            <select id="sort" aria-label="Sort movies">
+              <option value="rt" selected>Tomatometer (high → low)</option>
+              <option value="popular">Most popular</option>
+              <option value="title">Title A–Z</option>
+              <option value="year">Newest first</option>
+            </select>
+          </label>
+          <label class="select-wrap">
+            <span class="sr-only">Filter service</span>
+            <select id="provider" aria-label="Filter by streaming service">
+              <option value="">All VidAngel services</option>
+              <option value="netflix">Netflix</option>
+              <option value="prime">Prime Video</option>
+              <option value="apple">Apple TV+</option>
+              <option value="peacock">Peacock</option>
+              <option value="paramount">Paramount+</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hero">
+        <p id="hero-lead" class="hero-lead">
+          Skip the tab-hopping. Browse movies on <strong>Netflix, Prime, Apple TV+, Peacock &amp; Paramount+</strong>
+          — or <strong>sign in to VidAngel</strong> for your exact catalog — ranked by critic score.
+        </p>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="grid" class="grid" aria-label="Movie list"></div>
+    </main>
+
+    <footer class="footer">
+      <p>Trailers &amp; posters via TMDB · Scores via OMDb/Rotten Tomatoes · Not affiliated with VidAngel</p>
+    </footer>
+  </div>
+
+  <dialog id="modal" class="modal" aria-labelledby="modal-title">
+    <article class="modal-panel">
+      <button class="modal-close" type="button" data-close aria-label="Close">&times;</button>
+      <div class="modal-media">
+        <div id="trailer" class="trailer-wrap"></div>
+      </div>
+      <div class="modal-body">
+        <h2 id="modal-title" class="modal-title"></h2>
+        <div id="modal-scores" class="modal-scores"></div>
+        <p id="modal-overview" class="modal-overview"></p>
+        <div id="modal-providers" class="modal-providers"></div>
+        <div class="modal-actions">
+          <a id="link-vidangel" class="btn btn-primary" href="#" target="_blank" rel="noopener">Open on VidAngel</a>
+          <a id="link-rt" class="btn btn-secondary" href="#" target="_blank" rel="noopener">Rotten Tomatoes</a>
+        </div>
+      </div>
+    </article>
+  </dialog>
+
+  <dialog id="login-dialog" class="modal login-dialog" aria-labelledby="login-title">
+    <article class="modal-panel login-panel">
+      <button class="modal-close" type="button" data-close aria-label="Close">&times;</button>
+      <div class="modal-body">
+        <h2 id="login-title" class="modal-title">Sign in to VidAngel</h2>
+        <p class="login-note">Your password is sent directly to VidAngel and stored only in this browser tab. StreamClean never sees it.</p>
+        <form id="login-form" class="login-form">
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="username" required>
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="current-password" required>
+          </label>
+          <p id="login-error" class="login-error" role="alert"></p>
+          <button type="submit" class="btn btn-primary btn-wide">Sign in</button>
+        </form>
+        <p class="login-foot">Need to link Netflix or Prime? Do that at <a href="https://www.vidangel.com/services" target="_blank" rel="noopener">vidangel.com/services</a> first.</p>
+      </div>
+    </article>
+  </dialog>
+
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>
