@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0c1220">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="StreamClean">
-  <meta name="description" content="Browse VidAngel-ready movies sorted by Rotten Tomatoes score. Watch trailers, then stream with filters.">
-  <title>StreamClean — Clean streaming, sorted by critics</title>
+  <meta name="description" content="Browse VidAngel-ready movies sorted by audience score where available; Tomatometer and Popcornmeter when OMDb returns them. Watch trailers, then stream with filters.">
+  <title>StreamClean — Clean streaming, audience score sorted</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
           <span class="brand-icon" aria-hidden="true">▶</span>
           <div>
             <h1 class="brand-name">StreamClean</h1>
-            <p class="brand-tag">VidAngel-ready · Rotten Tomatoes sorted</p>
+            <p class="brand-tag">VidAngel-ready · audience sort · both scores shown</p>
           </div>
         </div>
         <div class="controls">
@@ -29,7 +29,7 @@
           <label class="select-wrap">
             <span class="sr-only">Sort by</span>
             <select id="sort" aria-label="Sort movies">
-              <option value="rt" selected>Tomatometer (high → low)</option>
+              <option value="audience" selected>Audience score (high → low)</option>
               <option value="popular">Most popular</option>
               <option value="title">Title A–Z</option>
               <option value="year">Newest first</option>
@@ -54,12 +54,18 @@
       <section class="hero">
         <p id="hero-lead" class="hero-lead">
           Skip the tab-hopping. Browse movies on <strong>Netflix, Prime, Apple TV+, Peacock &amp; Paramount+</strong>
-          — or <strong>sign in to VidAngel</strong> for your exact catalog — ranked by critic score.
+          — or <strong>sign in to VidAngel</strong> for your exact catalog — ranked by audience score (Popcornmeter).
         </p>
       </section>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>
       <div id="grid" class="grid" aria-label="Movie list"></div>
+      <nav id="pager" class="pager" aria-label="Browse pages">
+        <button type="button" id="pager-prev" class="btn btn-ghost btn-sm">Previous</button>
+        <span id="pager-status" class="pager-status" aria-live="polite"></span>
+        <button type="button" id="pager-next" class="btn btn-ghost btn-sm">Next</button>
+      </nav>
+      <p id="load-hint" class="load-hint"></p>
     </main>
 
     <footer class="footer">

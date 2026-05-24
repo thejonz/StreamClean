@@ -42,7 +42,8 @@ async def discover_movies(
     *,
     provider_ids: list[int] | None = None,
     page: int = 1,
-) -> list[dict]:
+) -> tuple[list[dict], int]:
+    """TMDB discover (US watch providers filter). Returns (results_this_page, total_pages)."""
     ids = provider_ids or list(VIDANGEL_PROVIDERS.values())
     provider_filter = "|".join(str(i) for i in ids)
     data = await _get(
@@ -57,7 +58,12 @@ async def discover_movies(
             "vote_count.gte": 50,
         },
     )
-    return data.get("results", [])
+    results = data.get("results") or []
+    try:
+        total_pages = max(1, int(data.get("total_pages") or 1))
+    except (TypeError, ValueError):
+        total_pages = 1
+    return results, total_pages
 
 
 async def movie_external_ids(client: httpx.AsyncClient, tmdb_id: int) -> dict:
@@ -165,6 +171,67 @@ async def enrich_by_title(
 
 
 async def enrich_movie(client: httpx.AsyncClient, raw: dict) -> dict | None:
+    """One TMDB `/movie/{id}` bundles external IDs, trailers, providers (~3× fewer round-trips vs three endpoints)."""
+    tmdb_id = raw["id"]
+    try:
+        data = await _get(
+            client,
+            f"/movie/{tmdb_id}",
+            {"append_to_response": "external_ids,videos,watch/providers"},
+        )
+    except httpx.HTTPError:
+        return await _enrich_movie_parallel_fallback(client, raw)
+
+    ext = data.get("external_ids") or {}
+    vid_block = data.get("videos") or {}
+    videos = vid_block.get("results") if isinstance(vid_block, dict) else []
+    if videos is None:
+        videos = []
+
+    wp_flat = (
+        data.get("watch/providers")
+        if isinstance(data.get("watch/providers"), dict)
+        else data.get("watch_providers")
+    )
+    if not isinstance(wp_flat, dict):
+        wp_flat = {}
+    wp_results = wp_flat.get("results") or {}
+    if not isinstance(wp_results, dict):
+        wp_results = {}
+    us = wp_results.get("US", {})
+    flatrate = us.get("flatrate") or []
+    provider_names = {p["provider_id"]: p["provider_name"] for p in flatrate}
+    matched: list[dict] = []
+    for key, pid in VIDANGEL_PROVIDERS.items():
+        if pid in provider_names:
+            matched.append({"id": key, "name": provider_names[pid]})
+
+    if not matched:
+        return await _enrich_movie_parallel_fallback(client, raw)
+
+    poster_path = raw.get("poster_path") or data.get("poster_path")
+    backdrop_path = raw.get("backdrop_path") or data.get("backdrop_path")
+    title = raw.get("title") or raw.get("name") or data.get("title") or data.get("name") or "Unknown"
+    overview = raw.get("overview") or data.get("overview") or ""
+    yr = raw.get("release_date") or data.get("release_date") or ""
+    year = (yr[:4] if yr else None) or None
+    return {
+        "tmdb_id": tmdb_id,
+        "title": title,
+        "year": year,
+        "overview": overview,
+        "poster_url": f"{POSTER_BASE}{poster_path}" if poster_path else None,
+        "backdrop_url": f"{BACKDROP_BASE}{backdrop_path}" if backdrop_path else None,
+        "imdb_id": ext.get("imdb_id"),
+        "trailer_key": pick_trailer(videos if isinstance(videos, list) else []),
+        "providers": matched,
+        "vidangel_url": f"https://www.vidangel.com/search?q={quote_plus(title)}",
+        "tmdb_url": f"https://www.themoviedb.org/movie/{tmdb_id}",
+    }
+
+
+async def _enrich_movie_parallel_fallback(client: httpx.AsyncClient, raw: dict) -> dict | None:
+    """If append-to-response fails or parses unexpectedly, fall back to three parallel TMDB endpoints."""
     tmdb_id = raw["id"]
     try:
         external, videos, providers = await asyncio.gather(

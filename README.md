@@ -1,16 +1,19 @@
 # StreamClean
 
-Browse **VidAngel-ready** movies sorted by **Rotten Tomatoes** score, watch trailers, and jump straight to VidAngel — without tab-hopping through Netflix, Prime, RT, and VidAngel separately.
+Browse **VidAngel-ready** movies sorted by **Rotten Tomatoes audience score** (Popcornmeter), watch trailers, and jump straight to VidAngel — without tab-hopping through Netflix, Prime, RT, and VidAngel separately.
 
 **Why a website (not an iPhone app)?** You get something usable today on iPhone Safari, iPad, and desktop. No App Store wait, no separate Android build. Add it to your home screen for an app-like experience (PWA-friendly layout).
 
 ## What it does
 
 1. Finds movies streaming on services **VidAngel links to**: Netflix, Prime Video, Apple TV+, Peacock, Paramount+
-2. Fetches **Tomatometer** and audience scores (via OMDb → Rotten Tomatoes data)
-3. Sorts by critic score (default), popularity, title, or year
+2. Fetches **Tomatometer** and **audience** scores via OMDb (cards and detail show whichever fields are returned — often critic % is present when audience is N/A on the free tier)
+3. Sorts by **audience score** (default), popularity, title, or year
 4. Plays **YouTube trailers** in-app
 5. **Open on VidAngel** button for each title
+6. **Pagination** loads VidAngel movies in enrichment chunks (~24 titles) and walks TMDB discover **one TMDB page (~20 originals)** at a time in anonymous browse
+
+**Why it can feel slow:** each survivor title runs one bundled TMDB `/movie/{id}` request plus one OMDb request for tomato scores — network latency stacks across the batch. Re-peeking the same titles is faster thanks to an in-memory IMDb → score cache.
 
 > **Note:** VidAngel has no public catalog API. StreamClean shows movies on VidAngel-compatible streaming services. Most titles on those services have VidAngel filters, but always confirm on VidAngel before subscribing to watch.
 

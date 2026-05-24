@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from server.tmdb import TmdbError, discover_movies, enrich_by_title, enrich_movie
 
 STATIC_DIR = ROOT / "static"
-app = FastAPI(title="StreamClean", description="VidAngel-ready movies sorted by Rotten Tomatoes")
+app = FastAPI(title="StreamClean", description="VidAngel-ready movies sorted by audience score")
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -37,10 +37,9 @@ async def health():
 
 @app.get("/api/movies")
 async def movies(
-    sort: str = Query("rt", pattern="^(rt|title|year|popular)$"),
+    sort: str = Query("audience", pattern="^(audience|rt|title|year|popular)$"),
     provider: str | None = Query(None),
-    page: int = Query(1, ge=1, le=5),
-    limit: int = Query(24, ge=1, le=60),
+    page: int = Query(1, ge=1, le=500),
 ):
     provider_ids = None
     if provider and provider in VIDANGEL_PROVIDERS:
@@ -48,8 +47,7 @@ async def movies(
 
     try:
         async with httpx.AsyncClient() as client:
-            raw_movies = await discover_movies(client, provider_ids=provider_ids, page=page)
-            sem = asyncio.Semaphore(8)
+            sem = asyncio.Semaphore(16)
 
             async def enrich_one(raw: dict) -> dict | None:
                 async with sem:
@@ -59,6 +57,9 @@ async def movies(
                     scores = await fetch_rt_scores(client, base.get("imdb_id"))
                     return {**base, **scores}
 
+            raw_movies, total_pages = await discover_movies(
+                client, provider_ids=provider_ids, page=page
+            )
             enriched = await asyncio.gather(*(enrich_one(m) for m in raw_movies))
             results = [m for m in enriched if m is not None]
 
@@ -68,7 +69,13 @@ async def movies(
         raise HTTPException(status_code=502, detail=f"Upstream API error: {exc}") from exc
 
     results = _sort_movies(results, sort)
-    return {"movies": results[:limit], "count": len(results), "sort": sort, "page": page}
+    return {
+        "movies": results,
+        "sort": sort,
+        "discover_page": page,
+        "discover_total_pages": total_pages,
+        "discover_results_raw": len(raw_movies),
+    }
 
 
 class EnrichItem(BaseModel):
@@ -92,7 +99,7 @@ async def enrich(body: EnrichRequest):
     """Add RT scores and trailers to VidAngel catalog items (no VidAngel credentials on server)."""
     timeout = httpx.Timeout(20.0, connect=10.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
-        sem = asyncio.Semaphore(4)
+        sem = asyncio.Semaphore(10)
 
         async def enrich_one(item: EnrichItem) -> dict:
             base = item.model_dump()
@@ -131,8 +138,8 @@ async def enrich(body: EnrichRequest):
 
 
 def _sort_movies(movies: list[dict], sort: str) -> list[dict]:
-    if sort == "rt":
-        return sorted(movies, key=lambda m: (m.get("critic_score") is None, -(m.get("critic_score") or 0)))
+    if sort in ("audience", "rt"):
+        return sorted(movies, key=lambda m: (m.get("audience_score") is None, -(m.get("audience_score") or 0)))
     if sort == "title":
         return sorted(movies, key=lambda m: m.get("title", "").lower())
     if sort == "year":

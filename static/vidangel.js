@@ -321,13 +321,81 @@ export function filterByProvider(movies, providerSlug) {
   );
 }
 
+function normalizeTitle(title) {
+  return String(title || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function movieDedupeKey(m) {
+  const imdb = String(m.imdb_id || "").trim();
+  if (imdb) return `imdb:${imdb}`;
+  if (m.tmdb_id != null && String(m.tmdb_id).trim() !== "") return `tmdb:${m.tmdb_id}`;
+  const slug = String(m.slug || "").trim().toLowerCase();
+  if (slug) return `slug:${slug}`;
+  if (m.va_id != null && m.va_id !== "") return `va:${m.va_id}`;
+  const t = normalizeTitle(m.title);
+  const y = m.year ? String(m.year).slice(0, 4) : "";
+  return `ty:${t}|${y}`;
+}
+
+function mergeDupMovie(into, other) {
+  const byId = new Map();
+  for (const p of [...(into.providers || []), ...(other.providers || [])]) {
+    if (p?.id !== undefined && p?.id !== null && `${p.id}` !== "") {
+      byId.set(p.id, p);
+    }
+  }
+  into.providers = [...byId.values()];
+
+  const intoSlug = `${into.slug || ""}`.trim();
+  const otherSlug = `${other.slug || ""}`.trim();
+  if (!intoSlug && otherSlug) into.slug = other.slug;
+
+  if (!into.poster_url && other.poster_url) into.poster_url = other.poster_url;
+
+  const oIn = `${into.overview || ""}`.trim();
+  const oOther = `${other.overview || ""}`.trim();
+  if (!oIn && oOther) into.overview = other.overview;
+
+  if (into.critic_score == null && other.critic_score != null) into.critic_score = other.critic_score;
+  if (into.audience_score == null && other.audience_score != null) into.audience_score = other.audience_score;
+  if (!into.audience_rating && other.audience_rating) into.audience_rating = other.audience_rating;
+  if (!into.critic_rating && other.critic_rating) into.critic_rating = other.critic_rating;
+  if (!into.consensus && other.consensus) into.consensus = other.consensus;
+  if (!into.rt_url && other.rt_url) into.rt_url = other.rt_url;
+  if (!`${into.imdb_id || ""}` && other.imdb_id) into.imdb_id = other.imdb_id;
+  if (into.tmdb_id == null && other.tmdb_id != null) into.tmdb_id = other.tmdb_id;
+  if (!into.trailer_key && other.trailer_key) into.trailer_key = other.trailer_key;
+
+  const slugNow = `${into.slug || ""}`.trim();
+  into.vidangel_url = slugNow
+    ? `https://www.vidangel.com/movie/${slugNow}/`
+    : into.vidangel_url || other.vidangel_url;
+}
+
+/**
+ * VidAngel repeats the same title across carousel rows using different numeric IDs.
+ * After TMDB enrichment, merge again on imdb_id / tmdb_id.
+ */
+export function dedupeMovies(movies) {
+  const merged = new Map();
+  for (const m of movies || []) {
+    const k = movieDedupeKey(m);
+    if (!merged.has(k)) merged.set(k, { ...m });
+    else mergeDupMovie(merged.get(k), m);
+  }
+  return [...merged.values()];
+}
+
 export function sortMovies(movies, sort) {
   const list = [...movies];
-  if (sort === "rt") {
+  if (sort === "audience" || sort === "rt") {
     return list.sort(
       (a, b) =>
-        (a.critic_score == null) - (b.critic_score == null) ||
-        (b.critic_score || 0) - (a.critic_score || 0)
+        (a.audience_score == null) - (b.audience_score == null) ||
+        (b.audience_score || 0) - (a.audience_score || 0)
     );
   }
   if (sort === "title") {

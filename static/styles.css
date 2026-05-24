@@ -322,6 +322,37 @@ body {
   .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
 
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.35rem auto 0;
+  flex-wrap: wrap;
+}
+
+.pager-status {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  min-width: 12rem;
+  text-align: center;
+}
+
+.pager button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.load-hint {
+  margin: 0.65rem auto 0;
+  max-width: 40rem;
+  padding: 0 1rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .card {
   position: relative;
   border: none;
@@ -370,6 +401,21 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
   background: linear-gradient(145deg, var(--bg-card), var(--bg-elevated));
+}
+
+.card-score-badges {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+  z-index: 1;
+}
+
+.card-score-badges .rt-badge {
+  position: static;
 }
 
 .rt-badge {
