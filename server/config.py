@@ -6,6 +6,26 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
+# Long-lived enrichment cache on disk (~/.cache under repo root; ignored by git)
+CACHE_DB_PATH = ROOT / ".cache" / "streamclean.sqlite"
+
+
+def cache_enabled() -> bool:
+    v = os.getenv("STREAMCLEAN_CACHE")
+    if v is None or v.strip() == "":
+        return True
+    return v.strip().lower() not in {"0", "false", "no", "off"}
+
+
+def cache_ttl_seconds() -> float:
+    raw = os.getenv("STREAMCLEAN_CACHE_DAYS", "90").strip()
+    try:
+        days = int(raw)
+    except ValueError:
+        days = 90
+    days = max(1, days)
+    return float(days * 86400)
+
 TMDB_API_KEY = os.getenv("TMDB_API_KEY", "")
 OMDB_API_KEY = os.getenv("OMDB_API_KEY", "")
 

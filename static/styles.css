@@ -322,6 +322,10 @@ body {
   .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
 
+.pager-top {
+  margin: 0.75rem auto 1rem;
+}
+
 .pager {
   display: flex;
   align-items: center;
@@ -438,6 +442,12 @@ body {
 .rt-badge.rotten { color: var(--rotten); }
 .rt-badge.unknown { color: var(--unknown); }
 
+.card-score-badges .pending-scores {
+  font-style: italic;
+  opacity: 0.9;
+}
+
+
 .play-hint {
   position: absolute;
   inset: 0;
@@ -463,6 +473,21 @@ body {
 .card:hover .play-hint,
 .card:focus-visible .play-hint {
   opacity: 1;
+}
+
+/* Pending rows still invite opening the modal for synopsis + trailer loader. */
+.play-hint-pending {
+  opacity: 0.6;
+}
+
+.card:hover .play-hint-pending,
+.card:focus-visible .play-hint-pending {
+  opacity: 1;
+}
+
+.play-hint-pending span {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--bg-deep);
 }
 
 .card-meta {
@@ -600,6 +625,25 @@ body {
   color: var(--text-muted);
   font-size: 0.9rem;
   background: var(--bg-card);
+}
+
+.trailer-wrap .no-trailer.trailer-pending {
+  gap: 0.5rem;
+  grid-auto-flow: column;
+  align-items: center;
+  font-style: italic;
+}
+
+.trailer-wrap .no-trailer.trailer-pending span {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--accent-soft, rgba(255, 255, 255, 0.08));
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding-left: 0.12rem;
+  font-style: normal;
 }
 
 .modal-body {

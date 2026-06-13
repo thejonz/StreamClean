@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0c1220">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="StreamClean">
-  <meta name="description" content="Browse VidAngel-ready movies sorted by audience score where available; Tomatometer and Popcornmeter when OMDb returns them. Watch trailers, then stream with filters.">
-  <title>StreamClean — Clean streaming, audience score sorted</title>
+  <meta name="description" content="Browse VidAngel-ready movies; sort by Tomatometer or audience score (preference saved locally). Trailers via TMDB and scores via OMDb.">
+  <title>StreamClean — VidAngel-ready streaming browser</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
           <span class="brand-icon" aria-hidden="true">▶</span>
           <div>
             <h1 class="brand-name">StreamClean</h1>
-            <p class="brand-tag">VidAngel-ready · audience sort · both scores shown</p>
+            <p class="brand-tag">VidAngel-ready · Tomatometer or audience sort</p>
           </div>
         </div>
         <div class="controls">
@@ -29,8 +29,10 @@
           <label class="select-wrap">
             <span class="sr-only">Sort by</span>
             <select id="sort" aria-label="Sort movies">
-              <option value="audience" selected>Audience score (high → low)</option>
+              <option value="tomatometer">Tomatometer (high → low)</option>
+              <option value="audience">Audience score (high → low)</option>
               <option value="popular">Most popular</option>
+              <option value="none">Discovery order (no sort)</option>
               <option value="title">Title A–Z</option>
               <option value="year">Newest first</option>
             </select>
@@ -54,11 +56,16 @@
       <section class="hero">
         <p id="hero-lead" class="hero-lead">
           Skip the tab-hopping. Browse movies on <strong>Netflix, Prime, Apple TV+, Peacock &amp; Paramount+</strong>
-          — or <strong>sign in to VidAngel</strong> for your exact catalog — ranked by audience score (Popcornmeter).
+          — or <strong>sign in to VidAngel</strong>. Sort by Tomatometer or audience; cards highlight whichever score you're using.
         </p>
       </section>
 
       <div id="status" class="status" role="status" aria-live="polite"></div>
+      <nav id="pager-top" class="pager pager-top" aria-label="Browse pages (top)">
+        <button type="button" id="pager-prev-top" class="btn btn-ghost btn-sm">Previous</button>
+        <span id="pager-status-top" class="pager-status" aria-live="polite"></span>
+        <button type="button" id="pager-next-top" class="btn btn-ghost btn-sm">Next</button>
+      </nav>
       <div id="grid" class="grid" aria-label="Movie list"></div>
       <nav id="pager" class="pager" aria-label="Browse pages">
         <button type="button" id="pager-prev" class="btn btn-ghost btn-sm">Previous</button>

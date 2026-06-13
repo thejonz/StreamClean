@@ -1,0 +1,31 @@
+name: StreamClean
+options:
+  bundleIdPrefix: io.streamclean
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  StreamClean:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - PrivacyInfo.xcprivacy
+          - "*.md"
+    settings:
+      base:
+        # No Assets.xcassets yet — omitting App Icon would fail if we referenced "AppIcon"
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        CODE_SIGN_STYLE: Automatic
+        PRODUCT_BUNDLE_IDENTIFIER: io.streamclean.app
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0.0
+        SWIFT_VERSION: "5.0"
+        SWIFT_EMIT_LOCATION_STRINGS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: App/Info.plist
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    scheme: {}
+    resources:
+      - path: App/PrivacyInfo.xcprivacy

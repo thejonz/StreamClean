@@ -6,11 +6,9 @@ from urllib.parse import quote_plus
 import httpx
 
 from server.config import OMDB_API_KEY, OMDB_BASE, is_configured_key
+from server.long_cache import get_scores_imdb, put_scores_imdb
 
-
-
-
-# One OMDb request per enriched title dominates latency; caching imdb lookups helps pagination / rewinds.
+# Session RAM + SQLite: repeat paging survives restarts and avoids quota burn.
 _RT_SCORE_CACHE: dict[str, dict] = {}
 _RT_CACHE_ALARM = 3072
 
@@ -24,7 +22,11 @@ def _cache_scores(imdb_norm: str, payload: dict) -> None:
     if len(_RT_SCORE_CACHE) > _RT_CACHE_ALARM:
         _RT_SCORE_CACHE.pop(next(iter(_RT_SCORE_CACHE)))  # naive bound against unbounded RAM
 
-    pass
+
+def _persist_scores(persist_key: str, payload: dict) -> None:
+    """Keep process RAM warm and SQLite cold storage aligned."""
+    _cache_scores(persist_key, payload)
+    put_scores_imdb(persist_key, payload)
 
 
 def _critic_score_from_ratings(data: dict) -> int | None:
@@ -47,6 +49,11 @@ async def fetch_rt_scores(client: httpx.AsyncClient, imdb_id: str | None, *, tit
             if imdb_key in _RT_SCORE_CACHE:
                 return dict(_RT_SCORE_CACHE[imdb_key])
 
+            disk = get_scores_imdb(imdb_key)
+            if disk is not None:
+                _cache_scores(imdb_key, disk)
+                return dict(disk)
+
             try:
                 response = await client.get(
                     OMDB_BASE,
@@ -58,7 +65,8 @@ async def fetch_rt_scores(client: httpx.AsyncClient, imdb_id: str | None, *, tit
                 if data.get("Response") == "True":
                     out = _scores_from_omdb(data)
                     canon = data.get("imdbID")
-                    _cache_scores(_imdb_norm(canon) if canon else imdb_key, out)
+                    persist_key = _imdb_norm(canon) if canon else imdb_key
+                    _persist_scores(persist_key, out)
                     return out
             except httpx.HTTPError:
                 pass
@@ -74,7 +82,7 @@ async def fetch_rt_scores(client: httpx.AsyncClient, imdb_id: str | None, *, tit
                 out = _scores_from_omdb(data)
                 canon = data.get("imdbID")
                 if canon:
-                    _cache_scores(_imdb_norm(canon), out)
+                    _persist_scores(_imdb_norm(canon), out)
                 return out
     except httpx.HTTPError:
         pass

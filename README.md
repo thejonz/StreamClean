@@ -1,19 +1,23 @@
 # StreamClean
 
-Browse **VidAngel-ready** movies sorted by **Rotten Tomatoes audience score** (Popcornmeter), watch trailers, and jump straight to VidAngel — without tab-hopping through Netflix, Prime, RT, and VidAngel separately.
+Browse **VidAngel-ready** movies with **Tomatometer** or **audience score** sorting (your choice is saved in `localStorage`), watch trailers, and jump straight to VidAngel — without tab-hopping through Netflix, Prime, RT, and VidAngel separately.
 
-**Why a website (not an iPhone app)?** You get something usable today on iPhone Safari, iPad, and desktop. No App Store wait, no separate Android build. Add it to your home screen for an app-like experience (PWA-friendly layout).
+**Why mostly a web app?** Same UI runs on iPhone Safari, iPad, and desktop; add StreamClean to your home screen (PWA-style) **or** use the optional Xcode shell under **`ios/`** (loads this server in `WKWebView`). The Python backend is always required unless you redesign for static hosting only.
 
 ## What it does
 
 1. Finds movies streaming on services **VidAngel links to**: Netflix, Prime Video, Apple TV+, Peacock, Paramount+
 2. Fetches **Tomatometer** and **audience** scores via OMDb (cards and detail show whichever fields are returned — often critic % is present when audience is N/A on the free tier)
-3. Sorts by **audience score** (default), popularity, title, or year
+3. Sorts by **Tomatometer**, **audience score**, popularity, title, year, or **discovery order (no sort)** — in that mode posters load immediately and Rotten Tomatoes scores fill in afterward; sort mode persists in this browser (`streamclean_sort`)
 4. Plays **YouTube trailers** in-app
 5. **Open on VidAngel** button for each title
-6. **Pagination** loads VidAngel movies in enrichment chunks (~24 titles) and walks TMDB discover **one TMDB page (~20 originals)** at a time in anonymous browse
+6. **Pagination** loads VidAngel movies in enrichment chunks (~24 titles) and walks TMDB discover **one TMDB page (~20 originals)** at a time in anonymous browse. **Discovery order (no sort)** and deferred VidAngel pages hydrate in **two phases**: **`POST /api/hydrate_discover_tmdb`** (or VidAngel **`POST /api/enrich_catalog_tmdb`**) for trailers and TMDB details, then **`POST /api/hydrate_scores`** for OMDb / Rotten Tomatoes so trailers can show up before Tomato scores finish
 
-**Why it can feel slow:** each survivor title runs one bundled TMDB `/movie/{id}` request plus one OMDb request for tomato scores — network latency stacks across the batch. Re-peeking the same titles is faster thanks to an in-memory IMDb → score cache.
+**Why it can feel slow:** each survivor title runs one bundled TMDB `/movie/{id}` request plus one OMDb request for tomato scores — network latency stacks across the batch.
+
+**Long-term cache (solo installs):** the server writes a WAL SQLite DB under `.cache/streamclean.sqlite` (gitignored): full enrichment rows keyed by TMDB ID, plus OMDb score blobs keyed by IMDb. Default TTL **90 days** (`STREAMCLEAN_CACHE_DAYS`); toggle with `STREAMCLEAN_CACHE=0`. Clearing stale rows happens automatically when the TTL lapses.
+
+**Why it can feel faster on repeat visits:** paging the same discovers or VidAngel batches mostly hits SQLite + RAM instead of upstream APIs.
 
 > **Note:** VidAngel has no public catalog API. StreamClean shows movies on VidAngel-compatible streaming services. Most titles on those services have VidAngel filters, but always confirm on VidAngel before subscribing to watch.
 
@@ -51,15 +55,17 @@ pip install -r requirements.txt
 python run.py
 ```
 
-Open **http://127.0.0.1:8765** in your browser. On iPhone: open in Safari → Share → **Add to Home Screen**.
+Open **http://127.0.0.1:8765** in your browser. On iPhone without the Xcode app: open in Safari → Share → **Add to Home Screen**. For **`ios/`** WKWebView build steps, see **[ios/README.md](ios/README.md)**.
 
 ## Project layout
 
 ```
 StreamClean/
+├── ios/               # Xcode / SwiftUI shell (loads this server in WKWebView)
 ├── run.py              # Dev server entry point
 ├── server/
 │   ├── main.py         # FastAPI routes
+│   ├── long_cache.py   # SQLite persistent cache (.cache/streamclean.sqlite)
 │   ├── tmdb.py         # TMDB discover + trailers
 │   └── omdb.py         # Rotten Tomatoes scores
 └── static/
@@ -78,7 +84,6 @@ StreamClean/
 - Cache scores locally to reduce OMDb calls
 - Parse VidAngel sitemap for exact catalog cross-reference
 - User watchlist / seen list
-- Native iPhone app (SwiftUI) sharing the same backend
 
 ## License
 

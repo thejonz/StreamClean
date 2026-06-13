@@ -391,7 +391,17 @@ export function dedupeMovies(movies) {
 
 export function sortMovies(movies, sort) {
   const list = [...movies];
-  if (sort === "audience" || sort === "rt") {
+  if (sort === "none") {
+    return list;
+  }
+  if (sort === "tomatometer" || sort === "rt") {
+    return list.sort(
+      (a, b) =>
+        (a.critic_score == null) - (b.critic_score == null) ||
+        (b.critic_score || 0) - (a.critic_score || 0)
+    );
+  }
+  if (sort === "audience") {
     return list.sort(
       (a, b) =>
         (a.audience_score == null) - (b.audience_score == null) ||
